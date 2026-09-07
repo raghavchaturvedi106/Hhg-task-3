@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-import face_recognition
+import cv2
 from web3 import Web3
 from eth_tester import EthereumTester
 from web3.providers.eth_tester import EthereumTesterProvider
@@ -13,26 +13,28 @@ def run_pipeline():
     
     image_path = "sample.jpg"
     if not os.path.exists(image_path):
-        sample_img_url = "https://raw.githubusercontent.com/Ageitgey/face_recognition/master/examples/alexa.jpg"
+        sample_img_url = "https://raw.githubusercontent.com/opencv/opencv/master/samples/data/lena.jpg"
         img_data = requests.get(sample_img_url).content
         with open(image_path, 'wb') as handler:
             handler.write(img_data)
             
-    image = face_recognition.load_image_file(image_path)
-    encodings = face_recognition.face_encodings(image)
+    # OpenCV Face Detection
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    img = cv2.imread(image_path)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
     
-    if not encodings:
+    if len(faces) == 0:
         print("[!] No face detected!")
         return
         
     print(f"[✓] Face Detected Successfully!")
-    print(f"[✓] 128-D Face Vector Encoding Generated: {encodings[0][:5]}...")
+    print(f"[✓] Face Boundary Box Vector: {faces[0].tolist()}")
 
     print("\n==================================================")
     print("   STEP 2: REVERSE SEARCH (SEARCHING WEB)        ")
     print("==================================================")
     
-    # Reverse image / social media search
     found_post = {
         "title": "Matched Profile on Social Media",
         "link": "https://x.com/sample_user/status/18293849102",
@@ -51,14 +53,12 @@ def run_pipeline():
     w3 = Web3(EthereumTesterProvider())
     account = w3.eth.accounts[0]
     
-    # Generate cryptographic fingerprint / hash of discovered data
     data_payload = json.dumps(found_post, sort_keys=True).encode('utf-8')
     data_hash = w3.solidity_keccak(['bytes'], [data_payload])
     
     print(f"[+] Fingerprint Generated (Keccak-256): {data_hash.hex()}")
     print("[+] Minting Block & Anchoring Data On-Chain...")
     
-    # Simulate Blockchain Transaction
     tx_hash = w3.eth.send_transaction({
         'from': account,
         'to': w3.eth.accounts[1],

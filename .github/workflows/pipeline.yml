@@ -18,10 +18,10 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install Lightweight Dependencies
+    - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install requests web3 eth-tester pyevm opencv-python-headless
+        pip install requests web3 opencv-python-headless
 
     - name: Run Pipeline
       run: |
